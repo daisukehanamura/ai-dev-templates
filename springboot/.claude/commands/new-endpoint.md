@@ -13,6 +13,7 @@ $ARGUMENTS にリソース名が渡される（例: `User`, `Order`）
    - `repository/${ARGUMENTS}Repository.java` — Spring Data JPA Repository
    - `model/entity/${ARGUMENTS}.java` — JPA Entity
    - `model/dto/Create${ARGUMENTS}Request.java` — 作成リクエスト DTO
+   - `model/dto/Update${ARGUMENTS}Request.java` — 更新リクエスト DTO
    - `model/dto/${ARGUMENTS}Response.java` — レスポンス DTO
 2. CLAUDE.md のコード例（DTO の from/toEntity パターン、Service のインターフェース分離）に従う
 3. 対応するテストクラスを作成:

@@ -92,8 +92,27 @@ export default tseslint.config(
         {
           patterns: [
             {
-              group: ["@/features/*/components/*", "@/features/*/hooks/*", "@/features/*/actions/*", "@/features/*/lib/*"],
+              group: [
+                "@/features/*/components/*",
+                "@/features/*/hooks/*",
+                "@/features/*/actions/*",
+                "@/features/*/lib/*",
+              ],
               message: "Import from the feature's index.ts instead of internal modules.",
+            },
+          ],
+        },
+      ],
+      // Restrict direct cross-feature references (enforce via index.ts only)
+      "import/no-restricted-paths": [
+        "error",
+        {
+          zones: [
+            {
+              target: "./src/features/",
+              from: "./src/features/",
+              except: ["./"],
+              message: "Cross-feature imports must go through index.ts. Share via components/ or hooks/ if needed.",
             },
           ],
         },

@@ -53,10 +53,10 @@ src/
 
 ### SOLID原則の適用
 
-- **SRP**: コンポーネント = 表示、hooks = 状態・ロジック、Server Actions = データ操作。1コンポーネントが表示とデータ取得の両方を担わない
-- **OCP**: `children` や composition パターンで拡張する。条件分岐で機能を切り替えるより、コンポーネントを組み合わせる
-- **ISP**: Props は必要最小限にする。巨大な props を渡すより、必要なフィールドだけを受け取る
-- **DIP**: データ取得ロジックはhooksやServer Actionsに分離し、コンポーネントは「何を表示するか」だけに集中する
+- コンポーネント = 表示、hooks = 状態・ロジック、Server Actions = データ操作（SRP）
+- `children` や composition で拡張する。条件分岐より組み合わせ（OCP）
+- Props は必要最小限に。巨大な props オブジェクトを渡さない（ISP）
+- データ取得は hooks / Server Actions に分離し、コンポーネントは表示に集中（DIP）
 
 ### コンポーネント設計
 
@@ -65,19 +65,14 @@ src/
 - 表示とロジックを分離する:
 
 ```tsx
-// ❌ Bad: コンポーネント内にロジックが混在
+// ❌ Bad
 export function UserList() {
   const [users, setUsers] = useState([]);
   useEffect(() => { fetch('/api/users').then(...) }, []);
-  const filtered = users.filter(u => u.active);
-  return <ul>{filtered.map(u => <li key={u.id}>{u.name}</li>)}</ul>;
+  return <ul>{users.filter(u => u.active).map(u => <li key={u.id}>{u.name}</li>)}</ul>;
 }
 
-// ✅ Good: hooks にロジックを分離
-function useActiveUsers() {
-  // fetch and filter logic
-}
-
+// ✅ Good
 export function UserList() {
   const users = useActiveUsers();
   return <ul>{users.map(u => <li key={u.id}>{u.name}</li>)}</ul>;
@@ -103,9 +98,10 @@ export function UserList() {
 - **ESLint**: `eslint.config.mjs` で Flat Config 形式。`next/core-web-vitals` + `typescript-eslint/strict` をベースに適用
 - **Prettier**: `.prettierrc.json` でフォーマットルールを定義。ESLint とは役割を分離（ESLint = コード品質、Prettier = フォーマット）
 - **EditorConfig**: `.editorconfig` でエディタ間の基本設定を統一
-- ESLint で `features/` の内部モジュールへの直接 import を `no-restricted-imports` で禁止している
+- ESLint で `features/` の内部モジュールへの直接 import と feature 間の相互参照を禁止している
 - `import/order` で import 文の並び順を自動整理する
 - コードフォーマットは Prettier に任せ、ESLint のフォーマット系ルールは使わない
+- Tailwind CSS を使う場合は `prettier-plugin-tailwindcss` を `.prettierrc.json` の `plugins` に追加する
 
 ### Do / Don't
 

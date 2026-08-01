@@ -54,14 +54,13 @@ Controller → Service → Repository → Entity
 
 ### SOLID原則の適用
 
-- **SRP**: Controller はルーティング、Service はビジネスロジック、Repository はデータアクセス。責務を跨がない
-- **OCP**: 新しいビジネスルールは新しい Service クラスや Strategy パターンで追加する。既存 Service への条件分岐追加を避ける
-- **LSP**: Service はインターフェースを定義し、実装を差し替え可能にする（テスト時のモック差し替えにも有用）
-- **ISP**: Repository にドメイン操作を詰め込まない。用途ごとにメソッドを分ける
-- **DIP**: Service はインターフェースに依存し、Spring DI で実装を注入する
+- Controller = ルーティング、Service = ビジネスロジック、Repository = データアクセス。責務を跨がない（SRP）
+- 新しいビジネスルールは新 Service や Strategy で追加。既存 Service への条件分岐追加を避ける（OCP）
+- Service はインターフェースを定義し、実装を差し替え可能にする（LSP/DIP）
+- Repository に複数の関心を詰め込まない（ISP）
 
 ```java
-// ✅ Good: インターフェースに依存
+// Service のインターフェース分離例
 public interface UserService {
     UserResponse findById(Long id);
     UserResponse create(CreateUserRequest request);
@@ -74,15 +73,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse findById(Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User", id));
-        return UserResponse.from(user);
+        return UserResponse.from(userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User", id)));
     }
 
     @Override
     public UserResponse create(CreateUserRequest request) {
-        User user = request.toEntity();
-        return UserResponse.from(userRepository.save(user));
+        return UserResponse.from(userRepository.save(request.toEntity()));
     }
 }
 ```
