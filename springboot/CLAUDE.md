@@ -6,6 +6,7 @@
 - Java 21+ (Records 活用)
 - Gradle (Kotlin DSL)
 - Spring Data JPA
+- Checkstyle + Spotless (linter/formatter)
 
 ## ディレクトリ構成
 
@@ -138,6 +139,15 @@ public record UserResponse(Long id, String name, String email) {
 - ビジネスエラーはカスタム例外をスローし、`@RestControllerAdvice` で一元処理する
 - Controller で try-catch しない
 
+### Linter / Formatter
+
+- **Checkstyle**: `config/checkstyle/checkstyle.xml` で静的解析ルールを定義。Google Java Style をベースにカスタマイズ
+- **Spotless**: Google Java Format (AOSP) でコードフォーマットを自動化。import 順序も `config/spotless/java.importorder` で統一
+- **EditorConfig**: `.editorconfig` でエディタ間の基本設定（インデント4スペース等）を統一
+- Gradle での適用方法: `apply(from = "gradle/lint.gradle.kts")` を `build.gradle.kts` に追加
+- フォーマットは Spotless に任せ、Checkstyle はコード品質ルールに集中する
+- メソッド長30行、パラメータ数5個を上限としている
+
 ### Do / Don't
 
 - **Do**: Service にインターフェースを定義する
@@ -147,3 +157,50 @@ public record UserResponse(Long id, String name, String email) {
 - **Don't**: Entity を Controller のレスポンスとして返さない
 - **Don't**: Repository に複雑なロジックを書かない（クエリのみ）
 - **Don't**: 同レイヤー内で依存しない（Service が別の Service を呼ぶのは許容、ただし循環依存は禁止）
+
+## CI/CD
+
+### CI パイプライン (.github/workflows/ci.yml)
+
+PR・push 時に以下が並列実行され、すべて通過後に Build が走る:
+
+1. **Lint & Format** — `./gradlew spotlessCheck`
+2. **Unit Test** — `./gradlew test`
+3. **Integration Test** — `./gradlew integrationTest`（PostgreSQL サービスコンテナ付き）
+4. **Build** — `./gradlew build -x test -x integrationTest`（上記3ジョブ通過後）
+
+### CD パイプライン (.github/workflows/cd.yml)
+
+main ブランチで CI 成功後、Docker イメージをビルドし GHCR にプッシュする。
+
+### 必須 Gradle 設定
+
+CI/CD が期待する Gradle タスク:
+
+- `spotlessCheck` — Spotless によるフォーマットチェック
+- `test` — `src/test/` 配下のユニットテスト
+- `integrationTest` — `src/test/.../integration/` 配下の統合テスト（カスタムタスク定義が必要）
+- `bootJar` — 実行可能 JAR のビルド
+
+```kotlin
+// build.gradle.kts — integrationTest タスク例
+sourceSets {
+    create("integrationTest") {
+        compileClasspath += sourceSets.main.get().output
+        runtimeClasspath += sourceSets.main.get().output
+    }
+}
+
+tasks.register<Test>("integrationTest") {
+    testClassesDirs = sourceSets["integrationTest"].output.classesDirs
+    classpath = sourceSets["integrationTest"].runtimeClasspath
+    useJUnitPlatform()
+    shouldRunAfter(tasks.test)
+}
+```
+
+### Docker
+
+- `Dockerfile`: multi-stage ビルド（builder → runtime）
+- Eclipse Temurin 21 ベース
+- `.dockerignore` で不要ファイルを除外済み

@@ -1,0 +1,11 @@
+node_modules/
+.next/
+.git/
+.github/
+.env*
+!.env.example
+*.md
+.editorconfig
+.prettierrc.json
+.prettierignore
+eslint.config.mjs

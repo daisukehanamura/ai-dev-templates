@@ -115,3 +115,40 @@ export function UserList() {
 - **Don't**: `app/` 配下にビジネスロジックを書かない。`app/` はルーティングとレイアウトに徹する
 - **Don't**: `features/` を跨ぐ直接 import をしない
 - **Don't**: 1ファイルに複数の公開コンポーネントを定義しない
+
+## CI/CD
+
+### CI パイプライン (.github/workflows/ci.yml)
+
+PR・push 時に以下が並列実行され、すべて通過後に Build が走る:
+
+1. **Lint & Format** — `pnpm run lint` + `pnpm run format:check`
+2. **Type Check** — `pnpm run typecheck`
+3. **Test** — `pnpm run test -- --coverage`
+4. **Build** — `pnpm run build`（上記3ジョブ通過後）
+
+### CD パイプライン (.github/workflows/cd.yml)
+
+main ブランチで CI 成功後、Docker イメージをビルドし GHCR にプッシュする。
+
+### 必須 npm scripts
+
+CI/CD が期待する `package.json` の scripts:
+
+```json
+{
+  "scripts": {
+    "lint": "next lint",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "build": "next build"
+  }
+}
+```
+
+### Docker
+
+- `Dockerfile`: multi-stage ビルド（deps → build → runtime）
+- Next.js の `output: "standalone"` を `next.config.ts` で有効にすること
+- `.dockerignore` で不要ファイルを除外済み
